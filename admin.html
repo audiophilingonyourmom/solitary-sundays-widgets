@@ -5,118 +5,229 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Solitary Sundays — Admin</title>
 <style>
+  @font-face {
+    font-family: "BitMGothic";
+    src: url("fonts/BitMGothic.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "PixelArial11";
+    src: url("fonts/PIXEAB_.TTF") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
-    font-family: system-ui, sans-serif;
-    max-width: 480px;
-    margin: 40px auto;
-    padding: 0 16px;
-    color: #222;
+    font-family: "PixelArial11", sans-serif;
+    font-size: 13px;
+    color: #f0f0f0;
+    background: #050717;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 60px 20px;
   }
-  h1 { font-size: 20px; margin-bottom: 16px; }
-  h2 { font-size: 16px; margin: 24px 0 8px; }
-  label { display: block; font-size: 13px; margin: 10px 0 4px; font-weight: 600; }
-  input, textarea {
+
+  .admin-card {
     width: 100%;
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-family: inherit;
+    max-width: 570px;
+    background: rgba(10, 15, 25, 0.9);
+    border: 1px solid #BAB2A5;
+    border-radius: 8px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.85);
+    padding: 28px 32px 32px;
+    margin-bottom: 24px;
   }
-  textarea { min-height: 70px; resize: vertical; }
-  button {
-    margin-top: 12px;
-    padding: 8px 16px;
-    font-size: 14px;
-    border: none;
+
+  .admin-card h2 {
+    font-family: "BitMGothic", serif;
+    font-size: 22px;
+    font-weight: normal;
+    text-align: center;
+    color: #D4B9B2;
+    text-shadow:
+      -1px -1px 0 #060913,
+       1px -1px 0 #060913,
+      -1px  1px 0 #060913,
+       1px  1px 0 #060913;
+    margin-bottom: 18px;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: #cfd6e0;
+    margin: 12px 0 6px;
+  }
+
+  textarea, input[type="text"], input[type="password"] {
+    width: 100%;
+    background: #0d1424;
+    border: 1px solid #A8C4D4;
     border-radius: 4px;
-    background: #34486c;
-    color: #fff;
+    color: #f0f0f0;
+    font-family: "PixelArial11", sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  textarea::placeholder, input::placeholder {
+    color: #6d7686;
+  }
+
+  textarea {
+    min-height: 110px;
+    resize: vertical;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 18px;
+    padding: 10px;
+    font-family: "BitMGothic", serif;
+    font-size: 15px;
+    font-weight: normal;
+    background: #8C5F68;
+    border: 1px solid #BFB9B1;
+    border-radius: 4px;
+    color: #ffffff;
     cursor: pointer;
   }
-  button:hover { background: #26364f; }
-  .status-msg { font-size: 13px; margin-top: 8px; }
-  .status-msg.error { color: #c0392b; }
-  .status-msg.success { color: #1e8449; }
+
+  button:hover { background: #9f6c76; }
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  .status-msg {
+    font-size: 12px;
+    margin-top: 10px;
+    text-align: center;
+    min-height: 14px;
+  }
+  .status-msg.error { color: #e39a9a; }
+  .status-msg.success { color: #9adca0; }
+
   #app { display: none; }
-  hr { margin: 32px 0; border: none; border-top: 1px solid #ddd; }
-  #signout { background: #888; float: right; }
+
+  .status-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+  }
+  @media (max-width: 520px) {
+    .status-fields { grid-template-columns: 1fr; }
+  }
+
+  #signout {
+    background: transparent;
+    border: 1px solid #6d7686;
+    color: #cfd6e0;
+    font-family: "PixelArial11", sans-serif;
+    font-size: 11px;
+    width: auto;
+    padding: 4px 10px;
+    margin: 0 0 20px;
+    float: right;
+  }
+  #signout:hover { background: rgba(255,255,255,0.05); }
 </style>
 </head>
 <body>
 
-  <div id="login">
-    <h1>Log in</h1>
-    <label for="email">Email</label>
-    <input type="email" id="email">
-    <label for="password">Password</label>
-    <input type="password" id="password">
-    <button id="login-btn">Log in</button>
+  <div class="admin-card" id="login-card">
+    <h2>✦ Admin Login ✦</h2>
+    <label for="secret-key">Admin Secret Key</label>
+    <input type="password" id="secret-key" placeholder="Enter your key">
+    <button id="login-btn">Unlock</button>
     <p class="status-msg error" id="login-msg"></p>
   </div>
 
   <div id="app">
     <button id="signout">Log out</button>
-    <h1>Solitary Sundays — Admin</h1>
 
-    <h2>New microblog post</h2>
-    <label for="post-text">Post text</label>
-    <textarea id="post-text" placeholder="What's on your mind?"></textarea>
-    <label for="avatar-url">Avatar image URL (optional)</label>
-    <input type="text" id="avatar-url" placeholder="Leave blank to use the default avatar">
-    <button id="post-btn">Post</button>
-    <p class="status-msg" id="post-msg"></p>
+    <div class="admin-card">
+      <h2>✦ New Microblog Post ✦</h2>
+      <label for="post-text">Post</label>
+      <textarea id="post-text" placeholder="Write something..."></textarea>
+      <label for="avatar-url">Image URL (optional)</label>
+      <input type="text" id="avatar-url" placeholder="Leave blank to use the default avatar">
+      <button id="post-btn">Publish Post</button>
+      <p class="status-msg" id="post-msg"></p>
+    </div>
 
-    <hr>
-
-    <h2>Update "Currently" status</h2>
-    <label for="feeling">Feeling</label>
-    <input type="text" id="feeling">
-    <label for="listening">Listening</label>
-    <input type="text" id="listening">
-    <label for="watching">Watching</label>
-    <input type="text" id="watching">
-    <label for="playing">Playing</label>
-    <input type="text" id="playing">
-    <label for="reading">Reading</label>
-    <input type="text" id="reading">
-    <button id="status-btn">Save status</button>
-    <p class="status-msg" id="status-msg"></p>
+    <div class="admin-card">
+      <h2>✦ Currently ✦</h2>
+      <div class="status-fields">
+        <div>
+          <label for="feeling">Feeling</label>
+          <input type="text" id="feeling">
+        </div>
+        <div>
+          <label for="listening">Listening</label>
+          <input type="text" id="listening">
+        </div>
+        <div>
+          <label for="watching">Watching</label>
+          <input type="text" id="watching">
+        </div>
+        <div>
+          <label for="playing">Playing</label>
+          <input type="text" id="playing">
+        </div>
+        <div>
+          <label for="reading">Reading</label>
+          <input type="text" id="reading">
+        </div>
+      </div>
+      <button id="status-btn">Save Status</button>
+      <p class="status-msg" id="status-msg"></p>
+    </div>
   </div>
 
-  <script src="https://audiophilingonyourmom.github.io/solitary-sundays-widgets/"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // ---- Fill these in with your Supabase project's values ----
     const SUPABASE_URL = "https://gcnmjgyuyelqppkpytow.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_6SJRQVPqERtYanyHi7iGxw_NGIwVoWN";
+    // The email tied to the one Supabase Auth user you created for
+    // yourself. The visible form only asks for the password (styled
+    // as "Admin Secret Key") — the email stays fixed here so you
+    // never have to type it.
+    const ADMIN_EMAIL = "YOUR_ADMIN_EMAIL";
     // -------------------------------------------------------------
 
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const loginDiv = document.getElementById("login");
+    const loginCard = document.getElementById("login-card");
     const appDiv = document.getElementById("app");
 
     async function checkSession() {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        loginDiv.style.display = "none";
+        loginCard.style.display = "none";
         appDiv.style.display = "block";
         loadCurrentStatus();
       } else {
-        loginDiv.style.display = "block";
+        loginCard.style.display = "block";
         appDiv.style.display = "none";
       }
     }
 
     document.getElementById("login-btn").addEventListener("click", async () => {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value;
+      const key = document.getElementById("secret-key").value;
       const msg = document.getElementById("login-msg");
       msg.textContent = "";
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: ADMIN_EMAIL,
+        password: key,
+      });
+
       if (error) {
-        msg.textContent = error.message;
+        msg.textContent = "Incorrect key.";
       } else {
         checkSession();
       }
