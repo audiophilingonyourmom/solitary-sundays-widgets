@@ -190,22 +190,22 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // ---- Fill these in with your Supabase project's values ----
-    const SUPABASE_URL = "https://gcnmjgyuyelqppkpytow.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_6SJRQVPqERtYanyHi7iGxw_NGIwVoWN";
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
     // The email tied to the one Supabase Auth user you created for
     // yourself. The visible form only asks for the password (styled
     // as "Admin Secret Key") — the email stays fixed here so you
     // never have to type it.
-    const ADMIN_EMAIL = "felixnikkole@gmail.com";
+    const ADMIN_EMAIL = "YOUR_ADMIN_EMAIL";
     // -------------------------------------------------------------
 
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const loginCard = document.getElementById("login-card");
     const appDiv = document.getElementById("app");
 
     async function checkSession() {
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabaseClient.auth.getSession();
       if (data.session) {
         loginCard.style.display = "none";
         appDiv.style.display = "block";
@@ -221,7 +221,7 @@
       const msg = document.getElementById("login-msg");
       msg.textContent = "";
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabaseClient.auth.signInWithPassword({
         email: ADMIN_EMAIL,
         password: key,
       });
@@ -234,7 +234,7 @@
     });
 
     document.getElementById("signout").addEventListener("click", async () => {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
       checkSession();
     });
 
@@ -251,7 +251,7 @@
         return;
       }
 
-      const { error } = await supabase.from("microblog_posts").insert({
+      const { error } = await supabaseClient.from("microblog_posts").insert({
         post_text: text,
         avatar_url: avatarUrl || null,
       });
@@ -268,7 +268,7 @@
     });
 
     async function loadCurrentStatus() {
-      const { data } = await supabase.from("status_widget").select("*").eq("id", 1).single();
+      const { data } = await supabaseClient.from("status_widget").select("*").eq("id", 1).single();
       if (!data) return;
       document.getElementById("feeling").value = data.feeling || "";
       document.getElementById("listening").value = data.listening || "";
@@ -282,7 +282,7 @@
       msg.className = "status-msg";
       msg.textContent = "";
 
-      const { error } = await supabase.from("status_widget").update({
+      const { error } = await supabaseClient.from("status_widget").update({
         feeling: document.getElementById("feeling").value.trim(),
         listening: document.getElementById("listening").value.trim(),
         watching: document.getElementById("watching").value.trim(),
