@@ -85,8 +85,8 @@
   <script>
     // ---- Fill these in with your Supabase project's values ----
     // Project Settings -> API -> Project URL / anon public key
-    const SUPABASE_URL = "https://gcnmjgyuyelqppkpytow.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_6SJRQVPqERtYanyHi7iGxw_NGIwVoWN";
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
     // -------------------------------------------------------------
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -118,7 +118,8 @@
       const container = document.getElementById("post-stream");
 
       if (error) {
-        container.innerHTML = '<p class="microblog-empty">Couldn\'t load posts right now.</p>';
+        console.error("Supabase error:", error);
+        container.innerHTML = '<p class="microblog-empty">Error: ' + escapeHtml(error.message || JSON.stringify(error)) + '</p>';
         sendHeight();
         return;
       }
