@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Microblog Widget</title>
+<style>
+  @font-face {
+    font-family: "NintendoDSBIOS";
+    src: url("fonts/Nintendo-DS-BIOS.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "PixelArial11";
+    src: url("fonts/PIXEAB_.TTF") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; overflow: hidden; }
+
+  .microblog-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .microblog-item:last-child { margin-bottom: 0; }
+
+  .microblog-avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid #BAB2A5;
+    background: #0d1424;
+  }
+
+  .microblog-bubble {
+    position: relative;
+    background: linear-gradient(180deg, rgba(96, 122, 168, 0.95) 0%, rgba(52, 72, 108, 0.92) 50%, rgba(30, 44, 74, 0.94) 100%);
+    border: 1px solid #A8C4D4;
+    border-radius: 12px;
+    padding: 10px 14px 8px;
+    flex-grow: 1;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+  .microblog-bubble::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 4%; right: 4%; height: 42%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.05) 100%);
+    border-radius: 50% / 18px 18px 0 0;
+    pointer-events: none;
+  }
+  .microblog-bubble .microblog-text {
+    position: relative;
+    font-family: "NintendoDSBIOS", "PixelArial11", sans-serif;
+    font-size: 17px;
+    line-height: 22px;
+    color: #f4f4f4;
+    margin-bottom: 6px;
+  }
+  .microblog-bubble .microblog-date {
+    position: relative;
+    display: block;
+    text-align: right;
+    font-family: "NintendoDSBIOS", "PixelArial11", sans-serif;
+    font-size: 10px;
+    color: #cfd6e0;
+  }
+  .microblog-empty {
+    font-family: "PixelArial11", sans-serif;
+    font-size: 11px;
+    color: #cfd6e0;
+  }
+</style>
+</head>
+<body>
+  <div id="post-stream"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ---- Fill these in with your Supabase project's values ----
+    // Project Settings -> API -> Project URL / anon public key
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+    // -------------------------------------------------------------
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const DEFAULT_AVATAR = "default-avatar.png"; // put a fallback avatar image next to this file
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { month: "2-digit", day: "2-digit", year: "2-digit" });
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function sendHeight() {
+      const height = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: "solitary-widget-resize", widget: "microblog", height }, "*");
+    }
+
+    async function loadPosts() {
+      const { data, error } = await supabase
+        .from("microblog_posts")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(15);
+
+      const container = document.getElementById("post-stream");
+
+      if (error) {
+        container.innerHTML = '<p class="microblog-empty">Couldn\'t load posts right now.</p>';
+        sendHeight();
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = '<p class="microblog-empty">No posts yet.</p>';
+        sendHeight();
+        return;
+      }
+
+      container.innerHTML = data.map(post => `
+        <div class="microblog-item">
+          <img class="microblog-avatar" src="${post.avatar_url || DEFAULT_AVATAR}" alt="">
+          <div class="microblog-bubble">
+            <p class="microblog-text">${escapeHtml(post.post_text)}</p>
+            <span class="microblog-date">${formatDate(post.created_at)}</span>
+          </div>
+        </div>
+      `).join("");
+
+      sendHeight();
+      // Avatars loading can change the final height slightly
+      container.querySelectorAll("img").forEach(img => img.addEventListener("load", sendHeight));
+    }
+
+    loadPosts();
+    window.addEventListener("resize", sendHeight);
+  </script>
+</body>
+</html>

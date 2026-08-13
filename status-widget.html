@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Status Widget</title>
+<style>
+  @font-face {
+    font-family: "PixelArial11";
+    src: url("fonts/PIXEAB_.TTF") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; overflow: hidden; }
+
+  .box-body {
+    font-family: "PixelArial11", sans-serif;
+    color: #BFB9B1;
+    font-size: 11px;
+    line-height: 14px;
+  }
+  .box-body p {
+    margin-bottom: 8px;
+    border-bottom: 1px dashed rgba(186, 178, 165, 0.2);
+    padding-bottom: 4px;
+  }
+  .box-body p:last-child { border-bottom: none; margin-bottom: 0; }
+</style>
+</head>
+<body>
+  <div class="box-body" id="status-body"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ---- Fill these in with your Supabase project's values ----
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+    // -------------------------------------------------------------
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function sendHeight() {
+      const height = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: "solitary-widget-resize", widget: "status", height }, "*");
+    }
+
+    async function loadStatus() {
+      const { data, error } = await supabase
+        .from("status_widget")
+        .select("*")
+        .eq("id", 1)
+        .single();
+
+      const container = document.getElementById("status-body");
+
+      if (error || !data) {
+        container.innerHTML = "<p>Couldn't load status right now.</p>";
+        sendHeight();
+        return;
+      }
+
+      const fields = [
+        ["Feeling", data.feeling],
+        ["Listening", data.listening],
+        ["Watching", data.watching],
+        ["Playing", data.playing],
+        ["Reading", data.reading],
+      ];
+
+      container.innerHTML = fields
+        .map(([label, value]) => `<p><strong>${label}:</strong> ${escapeHtml(value || "None")}</p>`)
+        .join("");
+
+      sendHeight();
+    }
+
+    loadStatus();
+    window.addEventListener("resize", sendHeight);
+  </script>
+</body>
+</html>

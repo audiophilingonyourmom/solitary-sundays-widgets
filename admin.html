@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solitary Sundays — Admin</title>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    max-width: 480px;
+    margin: 40px auto;
+    padding: 0 16px;
+    color: #222;
+  }
+  h1 { font-size: 20px; margin-bottom: 16px; }
+  h2 { font-size: 16px; margin: 24px 0 8px; }
+  label { display: block; font-size: 13px; margin: 10px 0 4px; font-weight: 600; }
+  input, textarea {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  button {
+    margin-top: 12px;
+    padding: 8px 16px;
+    font-size: 14px;
+    border: none;
+    border-radius: 4px;
+    background: #34486c;
+    color: #fff;
+    cursor: pointer;
+  }
+  button:hover { background: #26364f; }
+  .status-msg { font-size: 13px; margin-top: 8px; }
+  .status-msg.error { color: #c0392b; }
+  .status-msg.success { color: #1e8449; }
+  #app { display: none; }
+  hr { margin: 32px 0; border: none; border-top: 1px solid #ddd; }
+  #signout { background: #888; float: right; }
+</style>
+</head>
+<body>
+
+  <div id="login">
+    <h1>Log in</h1>
+    <label for="email">Email</label>
+    <input type="email" id="email">
+    <label for="password">Password</label>
+    <input type="password" id="password">
+    <button id="login-btn">Log in</button>
+    <p class="status-msg error" id="login-msg"></p>
+  </div>
+
+  <div id="app">
+    <button id="signout">Log out</button>
+    <h1>Solitary Sundays — Admin</h1>
+
+    <h2>New microblog post</h2>
+    <label for="post-text">Post text</label>
+    <textarea id="post-text" placeholder="What's on your mind?"></textarea>
+    <label for="avatar-url">Avatar image URL (optional)</label>
+    <input type="text" id="avatar-url" placeholder="Leave blank to use the default avatar">
+    <button id="post-btn">Post</button>
+    <p class="status-msg" id="post-msg"></p>
+
+    <hr>
+
+    <h2>Update "Currently" status</h2>
+    <label for="feeling">Feeling</label>
+    <input type="text" id="feeling">
+    <label for="listening">Listening</label>
+    <input type="text" id="listening">
+    <label for="watching">Watching</label>
+    <input type="text" id="watching">
+    <label for="playing">Playing</label>
+    <input type="text" id="playing">
+    <label for="reading">Reading</label>
+    <input type="text" id="reading">
+    <button id="status-btn">Save status</button>
+    <p class="status-msg" id="status-msg"></p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ---- Fill these in with your Supabase project's values ----
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+    // -------------------------------------------------------------
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginDiv = document.getElementById("login");
+    const appDiv = document.getElementById("app");
+
+    async function checkSession() {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        loginDiv.style.display = "none";
+        appDiv.style.display = "block";
+        loadCurrentStatus();
+      } else {
+        loginDiv.style.display = "block";
+        appDiv.style.display = "none";
+      }
+    }
+
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const msg = document.getElementById("login-msg");
+      msg.textContent = "";
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        msg.textContent = error.message;
+      } else {
+        checkSession();
+      }
+    });
+
+    document.getElementById("signout").addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      checkSession();
+    });
+
+    document.getElementById("post-btn").addEventListener("click", async () => {
+      const text = document.getElementById("post-text").value.trim();
+      const avatarUrl = document.getElementById("avatar-url").value.trim();
+      const msg = document.getElementById("post-msg");
+      msg.className = "status-msg";
+      msg.textContent = "";
+
+      if (!text) {
+        msg.textContent = "Write something first.";
+        msg.classList.add("error");
+        return;
+      }
+
+      const { error } = await supabase.from("microblog_posts").insert({
+        post_text: text,
+        avatar_url: avatarUrl || null,
+      });
+
+      if (error) {
+        msg.textContent = error.message;
+        msg.classList.add("error");
+      } else {
+        msg.textContent = "Posted!";
+        msg.classList.add("success");
+        document.getElementById("post-text").value = "";
+        document.getElementById("avatar-url").value = "";
+      }
+    });
+
+    async function loadCurrentStatus() {
+      const { data } = await supabase.from("status_widget").select("*").eq("id", 1).single();
+      if (!data) return;
+      document.getElementById("feeling").value = data.feeling || "";
+      document.getElementById("listening").value = data.listening || "";
+      document.getElementById("watching").value = data.watching || "";
+      document.getElementById("playing").value = data.playing || "";
+      document.getElementById("reading").value = data.reading || "";
+    }
+
+    document.getElementById("status-btn").addEventListener("click", async () => {
+      const msg = document.getElementById("status-msg");
+      msg.className = "status-msg";
+      msg.textContent = "";
+
+      const { error } = await supabase.from("status_widget").update({
+        feeling: document.getElementById("feeling").value.trim(),
+        listening: document.getElementById("listening").value.trim(),
+        watching: document.getElementById("watching").value.trim(),
+        playing: document.getElementById("playing").value.trim(),
+        reading: document.getElementById("reading").value.trim(),
+        updated_at: new Date().toISOString(),
+      }).eq("id", 1);
+
+      if (error) {
+        msg.textContent = error.message;
+        msg.classList.add("error");
+      } else {
+        msg.textContent = "Saved!";
+        msg.classList.add("success");
+      }
+    });
+
+    checkSession();
+  </script>
+</body>
+</html>
