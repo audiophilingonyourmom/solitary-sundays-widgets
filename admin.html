@@ -226,8 +226,9 @@
         password: key,
       });
 
-      if (error) {
-        msg.textContent = "Incorrect key.";
+if (error) {
+        console.error("Login error:", error);
+        msg.textContent = error.message;
       } else {
         checkSession();
       }
