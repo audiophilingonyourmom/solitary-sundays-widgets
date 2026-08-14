@@ -221,6 +221,9 @@
       const msg = document.getElementById("login-msg");
       msg.textContent = "";
 
+      console.log("Attempting login with email:", JSON.stringify(ADMIN_EMAIL));
+      console.log("Password length:", key.length, "First char code:", key.charCodeAt(0), "Last char code:", key.charCodeAt(key.length - 1));
+
       const { error } = await supabaseClient.auth.signInWithPassword({
         email: ADMIN_EMAIL,
         password: key,
