@@ -7,13 +7,13 @@
 <style>
   @font-face {
     font-family: "BitMGothic";
-    src: url("fonts/BitMGothic.ttf") format("truetype");
+    src: url("BitMGothic.ttf") format("truetype");
     font-weight: normal;
     font-style: normal;
   }
   @font-face {
     font-family: "PixelArial11";
-    src: url("fonts/PIXEAB_.TTF") format("truetype");
+    src: url("PIXEAB_.TTF") format("truetype");
     font-weight: normal;
     font-style: normal;
   }
@@ -133,6 +133,30 @@
     float: right;
   }
   #signout:hover { background: rgba(255,255,255,0.05); }
+
+  /* Insert Image row — secondary button, sits under the body
+     textarea rather than replacing the primary Publish button */
+  .insert-image-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  #insert-image-btn {
+    width: auto;
+    flex: none;
+    margin-top: 0;
+    padding: 6px 14px;
+    font-size: 12px;
+    background: #4a5a6e;
+  }
+  #insert-image-btn:hover { background: #566a82; }
+
+  .insert-image-hint {
+    font-size: 11px;
+    color: #6d7686;
+  }
 </style>
 </head>
 <body>
@@ -190,8 +214,16 @@
       <h2>✦ New Blog Post ✦</h2>
       <label for="blog-title">Title</label>
       <input type="text" id="blog-title" placeholder="Post title">
+
       <label for="blog-body">Body</label>
       <textarea id="blog-body" placeholder="Write your post..." style="min-height: 160px;"></textarea>
+
+      <div class="insert-image-row">
+        <button type="button" id="insert-image-btn">🖼 Insert Image</button>
+        <span class="insert-image-hint" id="insert-image-hint">Inserts at your cursor position</span>
+      </div>
+      <input type="file" id="image-file-input" accept="image/*" style="display:none;">
+
       <label for="blog-category">Category</label>
       <select id="blog-category">
         <option value="Life Updates">Life Updates</option>
@@ -215,6 +247,11 @@
     // as "Admin Secret Key") — the email stays fixed here so you
     // never have to type it.
     const ADMIN_EMAIL = "felixnikkole@gmail.com";
+    // Storage bucket that blog-post images get uploaded into. Create
+    // this in the Supabase dashboard (Storage → New bucket) and mark
+    // it Public so the resulting URLs are viewable by visitors —
+    // see the RLS note below the script for the policies it needs.
+    const IMAGE_BUCKET = "blog-images";
     // -------------------------------------------------------------
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -316,6 +353,67 @@
       } else {
         msg.textContent = "Saved!";
         msg.classList.add("success");
+      }
+    });
+
+    // ===========================================================
+    // INSERT IMAGE
+    //
+    // Uploads the chosen file to Supabase Storage, then inserts a
+    // ![alt](url) token at the current cursor position in the blog
+    // body textarea. blog-entry-widget.html's renderBody() looks
+    // for that exact token and turns it into a real <img> — it's
+    // the only bit of "markdown" it understands, deliberately, so
+    // a post body can never inject arbitrary HTML.
+    // ===========================================================
+    const blogBodyTextarea = document.getElementById("blog-body");
+    const insertImageBtn = document.getElementById("insert-image-btn");
+    const imageFileInput = document.getElementById("image-file-input");
+    const insertImageHint = document.getElementById("insert-image-hint");
+
+    insertImageBtn.addEventListener("click", () => imageFileInput.click());
+
+    imageFileInput.addEventListener("change", async () => {
+      const file = imageFileInput.files[0];
+      if (!file) return;
+
+      insertImageBtn.disabled = true;
+      insertImageBtn.textContent = "Uploading...";
+      insertImageHint.textContent = "";
+
+      try {
+        const ext = (file.name.split(".").pop() || "png").toLowerCase();
+        const path = `posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+        const { error: uploadError } = await supabaseClient
+          .storage
+          .from(IMAGE_BUCKET)
+          .upload(path, file);
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabaseClient.storage.from(IMAGE_BUCKET).getPublicUrl(path);
+        const url = data.publicUrl;
+
+        const token = `\n![](${url})\n`;
+        const start = blogBodyTextarea.selectionStart ?? blogBodyTextarea.value.length;
+        const end = blogBodyTextarea.selectionEnd ?? blogBodyTextarea.value.length;
+        const text = blogBodyTextarea.value;
+
+        blogBodyTextarea.value = text.slice(0, start) + token + text.slice(end);
+
+        const newPos = start + token.length;
+        blogBodyTextarea.focus();
+        blogBodyTextarea.setSelectionRange(newPos, newPos);
+
+        insertImageHint.textContent = "Image inserted.";
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        insertImageHint.textContent = "Upload failed — " + err.message;
+      } finally {
+        insertImageBtn.disabled = false;
+        insertImageBtn.textContent = "🖼 Insert Image";
+        imageFileInput.value = "";
       }
     });
 
