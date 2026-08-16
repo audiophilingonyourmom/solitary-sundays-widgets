@@ -4,14 +4,46 @@
 <meta charset="UTF-8">
 <title>Blog Entry Widget</title>
 <style>
+  /*
+     Same font files as the main site. Every file in this project
+     (blog.html, style.css, both widgets, admin.html) expects
+     fonts and images sitting flat in the same root folder — if
+     you move this widget into a subfolder later, update these
+     url()s to match.
+  */
+  @font-face {
+    font-family: "GothicPixels";
+    src: url("GothicPixels.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "Awesome";
+    src: url("Awesome.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+  @font-face {
+    font-family: "ZaiPencilTypewriter";
+    src: url("zai_PencilTypewriter.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: Georgia, 'Times New Roman', serif;
-    color: #3a2e28;
+    font-family: "ZaiPencilTypewriter", Georgia, serif;
+    color: #2c1a18;
     background: transparent;
     overflow: hidden;
   }
 
+  /*
+     Widget-only controls (search/category/tag) — these have no
+     equivalent in the real site's CSS since they don't exist
+     outside this widget, so they're styled to fit the palette
+     rather than matching an existing class.
+  */
   .entry-controls {
     display: flex;
     flex-wrap: wrap;
@@ -24,60 +56,103 @@
     padding: 5px 8px;
     font-family: inherit;
     font-size: 12px;
-    border: 1px solid #b8a998;
+    border: 1px solid rgba(122, 21, 24, 0.35);
     border-radius: 3px;
-    background: rgba(255,255,255,0.6);
-    color: #3a2e28;
+    background: rgba(255, 255, 255, 0.5);
+    color: #2c1a18;
   }
   .category-btn {
-    background: rgba(255,255,255,0.5);
-    border: 1px solid #b8a998;
+    background: rgba(122, 21, 24, 0.08);
+    border: 1px solid rgba(122, 21, 24, 0.35);
     border-radius: 3px;
-    color: #5c4a3d;
-    font-family: inherit;
-    font-size: 11px;
+    color: #7a1518;
+    font-family: "GothicPixels", monospace;
+    font-size: 10px;
     padding: 4px 8px;
     cursor: pointer;
   }
-  .category-btn.active { background: #8C5F68; color: #fff; border-color: #8C5F68; }
+  .category-btn.active { background: #7a1518; color: #fff; border-color: #7a1518; }
   .active-tag-chip {
-    background: #5c4a3d;
+    background: #7a1518;
     color: #fff;
     border: none;
     border-radius: 3px;
-    font-size: 11px;
+    font-family: "GothicPixels", monospace;
+    font-size: 10px;
     padding: 4px 8px;
     cursor: pointer;
   }
+
+  /*
+     Everything below reuses the real site's exact class names,
+     fonts, sizes, and colors from style.css's .post-header /
+     .post-date / .post-title / .post-gif / .post-divider /
+     .post-tags / .post-navigation rules. The surrounding box
+     (background, border, backdrop-blur, padding) is deliberately
+     NOT duplicated here — that's already supplied by the real
+     .post-body element this widget's iframe sits inside on the
+     live page, so re-adding it here would double it up.
+  */
 
   .post-header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
     margin-bottom: 8px;
   }
-  .post-date { font-size: 12px; color: #7a6a5c; font-style: italic; }
-  .post-gif { height: 20px; }
-  .post-title { font-size: 20px; font-weight: bold; }
+
+  .post-date {
+    font-family: "GothicPixels", monospace;
+    font-size: 11px;
+    font-weight: normal;
+    color: #2c1a18;
+  }
+
+  .post-gif {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    margin: 0 6px;
+  }
+
+  .post-title {
+    font-family: "Awesome", serif;
+    font-size: 18px;
+    font-weight: normal;
+    color: #2c1a18;
+    text-align: right;
+  }
 
   .post-divider {
     border: none;
-    border-top: 1px solid #b8a998;
-    margin: 8px 0 12px;
+    border-top: 1px dashed #7a1518;
+    margin: 8px 0 12px 0;
   }
 
   .post-body-text {
+    font-family: "ZaiPencilTypewriter", monospace;
     font-size: 14px;
     line-height: 1.6;
+    color: #2c1a18;
     white-space: pre-wrap;
     margin-bottom: 12px;
   }
 
+  .post-image {
+    display: block;
+    max-width: 90%;
+    height: auto;
+    margin: 16px auto;
+    border: 4px solid rgba(122, 21, 24, 0.15);
+    box-shadow: 3px 4px 8px rgba(50, 20, 15, 0.18);
+  }
+
   .post-category {
     display: inline-block;
+    font-family: "GothicPixels", monospace;
     font-size: 10px;
-    color: #5c4a3d;
-    border: 1px solid #b8a998;
+    color: #7a1518;
+    border: 1px solid rgba(122, 21, 24, 0.25);
     border-radius: 3px;
     padding: 2px 6px;
     margin-bottom: 8px;
@@ -85,39 +160,45 @@
 
   .post-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
   .post-tags span, .post-tags button {
-    background: none;
-    border: 1px solid #b8a998;
-    border-radius: 10px;
-    color: #5c4a3d;
-    font-family: inherit;
-    font-size: 11px;
-    padding: 2px 9px;
+    background: rgba(122, 21, 24, 0.1);
+    border: 1px solid rgba(122, 21, 24, 0.25);
+    border-radius: 3px;
+    color: #7a1518;
+    font-family: "GothicPixels", monospace;
+    font-size: 10px;
+    padding: 3px 8px;
     cursor: pointer;
   }
-  .post-tags button:hover { background: #5c4a3d; color: #fff; }
+  .post-tags button:hover { background: #7a1518; color: #fff; }
 
   .post-navigation {
     display: flex;
     justify-content: space-between;
-    font-size: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(122, 21, 24, 0.25);
   }
   .post-navigation a, .post-navigation button {
     background: none;
     border: none;
-    color: #5c4a3d;
-    font-family: inherit;
-    font-size: 12px;
+    color: #7a1518;
+    font-family: "GothicPixels", monospace;
+    font-size: 10px;
     cursor: pointer;
-    text-decoration: underline;
+    text-decoration: none;
     padding: 0;
   }
+  .post-navigation button:hover { text-decoration: underline; }
   .post-navigation button:disabled {
-    color: #b8a998;
+    color: rgba(122, 21, 24, 0.35);
     cursor: default;
     text-decoration: none;
   }
 
-  .entry-empty { font-size: 13px; color: #7a6a5c; }
+  .entry-empty {
+    font-family: "ZaiPencilTypewriter", monospace;
+    font-size: 13px;
+    color: #7a1518;
+  }
 </style>
 </head>
 <body>
@@ -136,7 +217,7 @@
   <script>
     // ---- Fill these in with your Supabase project's values ----
     const SUPABASE_URL = "https://gcnmjgyuyelqppkpytow.supabase.co";
-    const "sb_publishable_6SJRQVPqERtYanyHi7iGxw_NGIwVoWN";
+    const SUPABASE_ANON_KEY = "sb_publishable_6SJRQVPqERtYanyHi7iGxw_NGIwVoWN";
     // -------------------------------------------------------------
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -151,6 +232,29 @@
       const div = document.createElement("div");
       div.textContent = str;
       return div.innerHTML;
+    }
+
+    // Parses ONLY the specific token ![alt](https://...) out of the
+    // post body and turns it into a real <img class="post-image">.
+    // Everything else is escaped as plain text — this is not a full
+    // markdown parser and deliberately doesn't support any other
+    // HTML, so a post body can never inject arbitrary markup, only
+    // images inserted through the admin panel's Insert Image button.
+    function renderBody(text) {
+      const imageToken = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+      let html = "";
+      let lastIndex = 0;
+      let match;
+
+      while ((match = imageToken.exec(text)) !== null) {
+        const [full, alt, url] = match;
+        html += escapeHtml(text.slice(lastIndex, match.index));
+        html += `<img class="post-image" src="${escapeHtml(url)}" alt="${escapeHtml(alt)}">`;
+        lastIndex = match.index + full.length;
+      }
+
+      html += escapeHtml(text.slice(lastIndex));
+      return html;
     }
 
     function sendHeight() {
@@ -213,7 +317,7 @@
         </header>
         <div class="post-category">${escapeHtml(post.category)}</div>
         <hr class="post-divider">
-        <p class="post-body-text">${escapeHtml(post.body)}</p>
+        <div class="post-body-text">${renderBody(post.body)}</div>
         <div class="post-tags">
           ${(post.tags || []).map(t => `<button data-tag="${escapeHtml(t)}">#${escapeHtml(t)}</button>`).join("")}
         </div>
