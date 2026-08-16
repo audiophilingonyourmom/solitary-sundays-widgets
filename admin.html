@@ -64,7 +64,7 @@
     margin: 12px 0 6px;
   }
 
-  textarea, input[type="text"], input[type="password"] {
+  textarea, input[type="text"], input[type="password"], select {
     width: 100%;
     background: #0d1424;
     border: 1px solid #A8C4D4;
@@ -185,18 +185,36 @@
       <button id="status-btn">Save Status</button>
       <p class="status-msg" id="status-msg"></p>
     </div>
+
+    <div class="admin-card">
+      <h2>✦ New Blog Post ✦</h2>
+      <label for="blog-title">Title</label>
+      <input type="text" id="blog-title" placeholder="Post title">
+      <label for="blog-body">Body</label>
+      <textarea id="blog-body" placeholder="Write your post..." style="min-height: 160px;"></textarea>
+      <label for="blog-category">Category</label>
+      <select id="blog-category">
+        <option value="Life Updates">Life Updates</option>
+        <option value="Thoughts and Things">Thoughts and Things</option>
+        <option value="Reviews">Reviews</option>
+      </select>
+      <label for="blog-tags">Tags (comma-separated)</label>
+      <input type="text" id="blog-tags" placeholder="weekendtrip, bookreview, recipe">
+      <button id="blog-btn">Publish Blog Post</button>
+      <p class="status-msg" id="blog-msg"></p>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // ---- Fill these in with your Supabase project's values ----
-    const SUPABASE_URL = "https://gcnmjgyuyelqppkpytow.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_6SJRQVPqERtYanyHi7iGxw_NGIwVoWN";
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
     // The email tied to the one Supabase Auth user you created for
     // yourself. The visible form only asks for the password (styled
     // as "Admin Secret Key") — the email stays fixed here so you
     // never have to type it.
-    const ADMIN_EMAIL = "felixnikkole@gmail.com";
+    const ADMIN_EMAIL = "YOUR_ADMIN_EMAIL";
     // -------------------------------------------------------------
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -216,20 +234,17 @@
       }
     }
 
-document.getElementById("login-btn").addEventListener("click", async () => {
+    document.getElementById("login-btn").addEventListener("click", async () => {
       const key = document.getElementById("secret-key").value;
       const msg = document.getElementById("login-msg");
       msg.textContent = "";
-
-     console.log("Attempting login with email:", JSON.stringify(ADMIN_EMAIL));
-      console.log("Password length:", key.length, "First char code:", key.charCodeAt(0), "Last char code:", key.charCodeAt(key.length - 1));
 
       const { error } = await supabaseClient.auth.signInWithPassword({
         email: ADMIN_EMAIL,
         password: key,
       });
 
-if (error) {
+      if (error) {
         console.error("Login error:", error);
         msg.textContent = error.message;
       } else {
@@ -301,6 +316,43 @@ if (error) {
       } else {
         msg.textContent = "Saved!";
         msg.classList.add("success");
+      }
+    });
+
+    document.getElementById("blog-btn").addEventListener("click", async () => {
+      const title = document.getElementById("blog-title").value.trim();
+      const body = document.getElementById("blog-body").value.trim();
+      const category = document.getElementById("blog-category").value;
+      const tagsRaw = document.getElementById("blog-tags").value.trim();
+      const tags = tagsRaw
+        ? tagsRaw.split(",").map(t => t.trim().replace(/^#/, "")).filter(Boolean)
+        : [];
+      const msg = document.getElementById("blog-msg");
+      msg.className = "status-msg";
+      msg.textContent = "";
+
+      if (!title || !body) {
+        msg.textContent = "Title and body are both required.";
+        msg.classList.add("error");
+        return;
+      }
+
+      const { error } = await supabaseClient.from("blog_posts").insert({
+        title,
+        body,
+        category,
+        tags,
+      });
+
+      if (error) {
+        msg.textContent = error.message;
+        msg.classList.add("error");
+      } else {
+        msg.textContent = "Published!";
+        msg.classList.add("success");
+        document.getElementById("blog-title").value = "";
+        document.getElementById("blog-body").value = "";
+        document.getElementById("blog-tags").value = "";
       }
     });
 

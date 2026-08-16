@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Blog Entry Widget</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #3a2e28;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .entry-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  #search-input {
+    flex: 1;
+    min-width: 120px;
+    padding: 5px 8px;
+    font-family: inherit;
+    font-size: 12px;
+    border: 1px solid #b8a998;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.6);
+    color: #3a2e28;
+  }
+  .category-btn {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid #b8a998;
+    border-radius: 3px;
+    color: #5c4a3d;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+  .category-btn.active { background: #8C5F68; color: #fff; border-color: #8C5F68; }
+  .active-tag-chip {
+    background: #5c4a3d;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+
+  .post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .post-date { font-size: 12px; color: #7a6a5c; font-style: italic; }
+  .post-gif { height: 20px; }
+  .post-title { font-size: 20px; font-weight: bold; }
+
+  .post-divider {
+    border: none;
+    border-top: 1px solid #b8a998;
+    margin: 8px 0 12px;
+  }
+
+  .post-body-text {
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin-bottom: 12px;
+  }
+
+  .post-category {
+    display: inline-block;
+    font-size: 10px;
+    color: #5c4a3d;
+    border: 1px solid #b8a998;
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin-bottom: 8px;
+  }
+
+  .post-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .post-tags span, .post-tags button {
+    background: none;
+    border: 1px solid #b8a998;
+    border-radius: 10px;
+    color: #5c4a3d;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 2px 9px;
+    cursor: pointer;
+  }
+  .post-tags button:hover { background: #5c4a3d; color: #fff; }
+
+  .post-navigation {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .post-navigation a, .post-navigation button {
+    background: none;
+    border: none;
+    color: #5c4a3d;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+  }
+  .post-navigation button:disabled {
+    color: #b8a998;
+    cursor: default;
+    text-decoration: none;
+  }
+
+  .entry-empty { font-size: 13px; color: #7a6a5c; }
+</style>
+</head>
+<body>
+  <div class="entry-controls">
+    <input type="text" id="search-input" placeholder="Search posts...">
+    <button class="category-btn active" data-category="">All</button>
+    <button class="category-btn" data-category="Life Updates">Life Updates</button>
+    <button class="category-btn" data-category="Thoughts and Things">Thoughts</button>
+    <button class="category-btn" data-category="Reviews">Reviews</button>
+    <button class="active-tag-chip" id="active-tag-chip" style="display:none;"></button>
+  </div>
+
+  <div id="entry-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ---- Fill these in with your Supabase project's values ----
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+    // -------------------------------------------------------------
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let allPosts = [];
+    let currentIndex = 0; // index within the FILTERED list
+    let activeCategory = "";
+    let activeTag = "";
+    let searchText = "";
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function sendHeight() {
+      const height = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: "solitary-widget-resize", widget: "blog-entry", height }, "*");
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+    }
+
+    function getFiltered() {
+      return allPosts.filter(post => {
+        if (activeCategory && post.category !== activeCategory) return false;
+        if (activeTag && !(post.tags || []).includes(activeTag)) return false;
+        if (searchText) {
+          const haystack = (post.title + " " + post.body + " " + (post.tags || []).join(" ")).toLowerCase();
+          if (!haystack.includes(searchText.toLowerCase())) return false;
+        }
+        return true;
+      });
+    }
+
+    function render() {
+      document.querySelectorAll(".category-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.category === activeCategory);
+      });
+
+      const tagChip = document.getElementById("active-tag-chip");
+      if (activeTag) {
+        tagChip.style.display = "inline-block";
+        tagChip.textContent = "#" + activeTag + " ✕";
+        tagChip.onclick = () => { activeTag = ""; currentIndex = 0; render(); };
+      } else {
+        tagChip.style.display = "none";
+      }
+
+      const filtered = getFiltered();
+      const container = document.getElementById("entry-container");
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p class="entry-empty">No posts match.</p>';
+        sendHeight();
+        return;
+      }
+
+      if (currentIndex >= filtered.length) currentIndex = filtered.length - 1;
+      if (currentIndex < 0) currentIndex = 0;
+
+      const post = filtered[currentIndex];
+      // "Older" = further back in time = higher index (list is newest-first)
+      const hasOlder = currentIndex < filtered.length - 1;
+      const hasNewer = currentIndex > 0;
+
+      container.innerHTML = `
+        <header class="post-header">
+          <span class="post-date">${formatDate(post.created_at)}</span>
+          <span class="post-title">${escapeHtml(post.title)}</span>
+        </header>
+        <div class="post-category">${escapeHtml(post.category)}</div>
+        <hr class="post-divider">
+        <p class="post-body-text">${escapeHtml(post.body)}</p>
+        <div class="post-tags">
+          ${(post.tags || []).map(t => `<button data-tag="${escapeHtml(t)}">#${escapeHtml(t)}</button>`).join("")}
+        </div>
+        <div class="post-navigation">
+          <button id="older-btn" ${hasOlder ? "" : "disabled"}>← Older Entry</button>
+          <button id="newer-btn" ${hasNewer ? "" : "disabled"}>Newer Entry →</button>
+        </div>
+      `;
+
+      container.querySelectorAll(".post-tags button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          activeTag = btn.dataset.tag;
+          currentIndex = 0;
+          render();
+        });
+      });
+
+      const olderBtn = document.getElementById("older-btn");
+      const newerBtn = document.getElementById("newer-btn");
+      if (hasOlder) olderBtn.addEventListener("click", () => { currentIndex++; render(); });
+      if (hasNewer) newerBtn.addEventListener("click", () => { currentIndex--; render(); });
+
+      sendHeight();
+    }
+
+    async function loadPosts() {
+      const { data, error } = await supabaseClient
+        .from("blog_posts")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Supabase error:", error);
+        document.getElementById("entry-container").innerHTML = '<p class="entry-empty">Couldn\'t load posts right now.</p>';
+        sendHeight();
+        return;
+      }
+
+      allPosts = data || [];
+      render();
+    }
+
+    document.querySelectorAll(".category-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeCategory = btn.dataset.category;
+        currentIndex = 0;
+        render();
+      });
+    });
+
+    document.getElementById("search-input").addEventListener("input", (e) => {
+      searchText = e.target.value;
+      currentIndex = 0;
+      render();
+    });
+
+    // Lets the recent-posts sidebar widget (a separate iframe) tell
+    // this widget to jump straight to a specific post by id.
+    window.addEventListener("message", (event) => {
+      if (!event.data || event.data.type !== "blog-show-post") return;
+      const idx = allPosts.findIndex(p => p.id === event.data.id);
+      if (idx === -1) return;
+      // Reset filters so the requested post is guaranteed visible
+      activeCategory = "";
+      activeTag = "";
+      searchText = "";
+      document.getElementById("search-input").value = "";
+      const filtered = getFiltered();
+      currentIndex = filtered.findIndex(p => p.id === event.data.id);
+      render();
+    });
+
+    loadPosts();
+    window.addEventListener("resize", sendHeight);
+  </script>
+</body>
+</html>
