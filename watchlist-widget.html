@@ -187,246 +187,311 @@
   <script>
     // Master title list -- flattened, since real classification now
     // comes from MyAnimeList's own demographic/genre/theme data per
-    // title rather than these old manual buckets. Paste your full
-    // original list of titles here as a flat array.
-    const allTitles = [
-      "3x3 Eyes", "86", "91 Days", "Cowboy Bebop", "Fullmetal Alchemist Brotherhood",
-      "Fruits Basket", "Toradora!", "Your Lie in April", "Sailor Moon",
-      "Berserk", "Vinland Saga", "Monster", "Perfect Blue", "Paranoia Agent"
-      // NOTE: trimmed for brevity in this message -- replace this
-      // array with your complete original title list (flattened from
-      // all five old genre buckets into one array of strings).
-    ];
+    // title rather than these old manual buckets. // Paste your complete titles list from your document here
+const allTitles = [
+  "3x3 Eyes", "86", "91 Days", "A Certain Scientific Index", "A Condition Called Love",
+  "A Gentle Noble’s Vacation Recommendation", "A Place Further Than the Universe", 
+  "A Sign of Affection", "A.D. Police", "A.I.C.O Police", "Ai no Kusabi",
+  "A3! Season Autumn & Winter", "A3! Season Spring & Summer", "Absolute Duo",
+  "ACCA: 13-Territory Inspection Dept.", "Accel World", "Ace Attorney",
+  "Actors: Songs Connection", "Adachi and Shimamura", "Aesthetica of a Rogue Hero",
+  "Afro Samurai", "After the Rain", "After-School Hanako-kun", "Agent Aika",
+  "Ah! My Buddha", "Ah! My Goddess", "Aharen is Indecipherable", "Ahiru no Sora",
+  "Ai Yori Aoshi", "Aika R16: Virgin Mission", "Air Gear", "Ajin: Demi-Human",
+  "Akame ga Kill!", "Akiba Maid War", "Akudama Drive", "All Out!!", "Aldnoah.Zero",
+  "Alien Nine", "Amagi Brilliant Park", "Angel Beats", "Anohana: The Flower We Saw That Day",
+  "Another", "Ao-chan Can’t Study!", "Appleseed XIII", "Arifureta: From Commonplace to World’s Strongest",
+  "Assassination Classroom", "Baccano!", "Baki", "Bakuman", "Banana Fish", "Barakamon",
+  "Berserk", "Black Bullet", "Black Butler", "Black Clover", "Black Lagoon", "Bleach",
+  "Blood+", "Blue Exorcist", "Blue Lock", "Bungo Stray Dogs", "Call of the Night",
+  "Cardcaptor Sakura", "Carole & Tuesday", "Casshern Sins", "Cautious Hero", "Cells at Work!",
+  "Charlotte", "Chihayafuru", "Chobits", "Clannad", "Claymore", "Code Geass",
+  "Cowboy Bebop", "Cyberpunk: Edgerunners", "D-Frag!", "D.Gray-man", "Dan Da Dan",
+  "Darker than Black", "Darling in the Franxx", "Deadman Wonderland", "Death Note",
+  "Death Parade", "Delicious in Dungeon", "Demon Slayer", "Den-noh Coil", "Devilman Crybaby",
+  "Digimon Adventure", "Dimension W", "Dorohedoro", "Dororo", "Dr. Stone", "Dragon Ball",
+  "Durarara!!", "Eden of the East", "Edens Zero", "Elfen Lied", "ERASED", "Ergo Proxy",
+  "Eureka Seven", "Fairy Tail", "Fate/stay night", "Fate/Zero", "Fire Force", "FLCL",
+  "Food Wars!", "Free!", "Frieren: Beyond Journey's End", "Fruits Basket",
+  "Fullmetal Alchemist Brotherhood", "Gintama", "Goblin Slayer", "Golden Kamuy",
+  "Great Teacher Onizuka", "Guilty Crown", "Gurren Lagann", "Haikyu!!", "Hell's Paradise",
+  "Hellsing Ultimate", "High School DxD", "Highschool of the Dead", "Higurashi When They Cry",
+  "Horimiya", "Hunter x Hunter", "Hyouka", "Inuyasha", "JoJo's Bizarre Adventure",
+  "Jujutsu Kaisen", "Kaguya-sama: Love is War", "Kaiju No. 8", "Kakegurui", "Kill la Kill",
+  "Kimi ni Todoke", "Kingdom", "Kiznaiver", "KonoSuba", "Kuroko's Basketball",
+  "Land of the Lustrous", "Log Horizon", "Lycoris Recoil", "Made in Abyss",
+  "Magi: The Labyrinth of Magic", "Manga/Anime", "Mashle", "Megalo Box", "Mob Psycho 100",
+  "Monster", "Mushoku Tensei", "My Hero Academia", "My Dress-Up Darling", "Naruto",
+  "Neon Genesis Evangelion", "Nichijou", "No Game No Life", "Noragami", "One Piece",
+  "One Punch Man", "Overlord", "Parasyte", "Perfect Blue", "Psycho-Pass",
+  "Puella Magi Madoka Magica", "Ranma 1/2", "Rascal Does Not Dream of Bunny Girl Senpai",
+  "Re:Zero", "Rurouni Kenshin", "Sailor Moon", "Samurai Champloo", "Serial Experiments Lain",
+  "Shingeki no Kyojin", "Slam Dunk", "Soul Eater", "Spice and Wolf", "Spy x Family",
+  "Steins;Gate", "Sword Art Online", "Tengen Toppa Gurren Lagann", "Tokyo Ghoul",
+  "Tokyo Revengers", "Toradora!", "Trigun", "Vinland Saga", "Violet Evergarden",
+  "Wind Breaker", "Wotakoi", "Your Lie in April", "Yu Yu Hakusho", "Zom 100"
+];
 
-    const delay = ms => new Promise(res => setTimeout(res, ms));
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
-    function sendHeight() {
-      const height = document.documentElement.scrollHeight;
-      window.parent.postMessage({ type: "solitary-widget-resize", widget: "watchlist", height }, "*");
+function sendHeight() {
+  const height = document.documentElement.scrollHeight;
+  window.parent.postMessage({ type: "solitary-widget-resize", widget: "watchlist", height }, "*");
+}
+
+// ---------------- Mapping Rules ----------------
+const GENRE_MAP = {
+  "Action": "Action", "Romance": "Romance", "Comedy": "Comedy",
+  "Drama": "Drama", "Horror": "Horror", "Suspense": "Thriller",
+  "Sci-Fi": "Sci-Fi/Supernatural/Fantasy", "Supernatural": "Sci-Fi/Supernatural/Fantasy",
+  "Fantasy": "Sci-Fi/Supernatural/Fantasy", "Slice of Life": "Slice of Life",
+  "Adventure": "Adventure", "Mystery": "Mystery", "Ecchi": "Ecchi",
+  "Mecha": "Mecha", "Music": "Music", "Psychological": "Psychological",
+  "Iyashikei": "Iyashikei", "Mahou Shoujo": "Magical Girl"
+};
+
+const DEMOGRAPHIC_MAP = {
+  "Shounen": "Shounen", "Shoujo": "Shoujo",
+  "Seinen": "Seinen", "Josei": "Josei", "Kids": "Kodomomuke"
+};
+
+// ---------------- Robust Fetching with Kitsu Fallback ----------------
+async function fetchAnimeData(title, retries = 3) {
+  const cleanTitle = encodeURIComponent(title.trim());
+
+  // 1. Try Jikan API (MyAnimeList)
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(`https://api.jikan.moe/v4/anime?q=${cleanTitle}&limit=1&sfw=true`);
+      
+      if (res.status === 429 || res.status === 504) {
+        // Gateway Timeout (504) or Rate-limit (429) -> Wait longer each time
+        const waitTime = 1500 * (attempt + 1) + Math.random() * 500;
+        console.warn(`Jikan API returned ${res.status} for "${title}". Retrying in ${Math.round(waitTime)}ms...`);
+        await delay(waitTime);
+        continue;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.data && data.data.length > 0) {
+          return {
+            title: title,
+            imageUrl: data.data[0].images?.jpg?.image_url,
+            raw: data.data[0]
+          };
+        }
+      }
+    } catch (err) {
+      console.error(`Attempt ${attempt + 1} failed for "${title}":`, err);
+      await delay(1500 * (attempt + 1));
     }
+  }
 
-    // ---------------- Jikan fetch + classification ----------------
-
-    // Your approved genre buckets, and how MAL's actual field names
-    // (genres / explicit_genres / themes) map onto them.
-    const GENRE_MAP = {
-      "Action": "Action",
-      "Romance": "Romance",
-      "Comedy": "Comedy",
-      "Drama": "Drama",
-      "Horror": "Horror",
-      "Suspense": "Thriller",
-      "Sci-Fi": "Sci-Fi/Supernatural/Fantasy",
-      "Supernatural": "Sci-Fi/Supernatural/Fantasy",
-      "Fantasy": "Sci-Fi/Supernatural/Fantasy",
-      "Slice of Life": "Slice of Life",
-      "Adventure": "Adventure",
-      "Mystery": "Mystery",
-      "Ecchi": "Ecchi",              // comes from explicit_genres
-      "Mecha": "Mecha",              // comes from themes
-      "Music": "Music",              // comes from themes
-      "Psychological": "Psychological", // comes from themes
-      "Iyashikei": "Iyashikei",      // comes from themes
-      "Mahou Shoujo": "Magical Girl" // comes from themes
-    };
-
-    const DEMOGRAPHIC_MAP = {
-      "Shounen": "Shounen",
-      "Shoujo": "Shoujo",
-      "Seinen": "Seinen",
-      "Josei": "Josei",
-      "Kids": "Kodomomuke"
-    };
-
-    async function fetchAnimeData(title, retries = 3) {
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-          const res = await fetch(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(title)}&limit=1`);
-          if (res.status === 429 || res.status === 504) {
-            // Rate-limited or Jikan's server is overloaded -- back off
-            // longer each retry rather than hammering it again immediately.
-            await delay(1200 * (attempt + 1));
-            continue;
+  // 2. Fallback to Kitsu API if Jikan fails/times out repeatedly
+  console.warn(`Jikan API failed for "${title}". Trying Kitsu API fallback...`);
+  try {
+    const kitsuRes = await fetch(`https://kitsu.io/api/edge/anime?filter[text]=${cleanTitle}&page[limit]=1`);
+    if (kitsuRes.ok) {
+      const kitsuData = await kitsuRes.json();
+      if (kitsuData.data && kitsuData.data.length > 0) {
+        const item = kitsuData.data[0].attributes;
+        return {
+          title: title,
+          imageUrl: item.posterImage?.small || item.posterImage?.original,
+          raw: {
+            demographics: [],
+            genres: [{ name: item.subtype || "Other" }],
+            explicit_genres: [],
+            themes: []
           }
-          if (!res.ok) return null;
-          const data = await res.json();
-          if (data.data && data.data.length > 0) return data.data[0];
-          return null;
-        } catch (err) {
-          console.error(`Failed fetching ${title} (attempt ${attempt + 1})`, err);
-          await delay(1200 * (attempt + 1));
-        }
-      }
-      console.warn(`Giving up on ${title} after ${retries + 1} attempts`);
-      return null;
-    }
-
-    function classify(animeData) {
-      const demoNames = (animeData.demographics || []).map(d => d.name);
-      const demographic = demoNames.map(n => DEMOGRAPHIC_MAP[n]).find(Boolean) || "Unclassified";
-
-      const rawTags = [
-        ...(animeData.genres || []),
-        ...(animeData.explicit_genres || []),
-        ...(animeData.themes || [])
-      ].map(g => g.name);
-
-      const genres = [...new Set(rawTags.map(n => GENRE_MAP[n]).filter(Boolean))];
-      if (genres.length === 0) genres.push("Other");
-
-      return { demographic, genres };
-    }
-
-    function buildSkeletonCard(id, title) {
-      const card = document.createElement('div');
-      card.className = 'media-card';
-      card.id = id;
-      card.innerHTML = `
-        <div class="cover-wrap skeleton"></div>
-        <p class="media-title">${title}</p>
-      `;
-      return card;
-    }
-
-    // ---------------- ALL VIEW (first 30, 6x5 grid) ----------------
-    let allViewLoaded = false;
-
-    function setupAllView() {
-      const titles = allTitles.slice(0, 30);
-      const grid = document.getElementById('allGrid');
-      titles.forEach((title, i) => grid.appendChild(buildSkeletonCard(`all-card-${i}`, title)));
-      return titles;
-    }
-
-    async function loadAllViewCovers(titles) {
-      if (allViewLoaded) return;
-      allViewLoaded = true;
-      for (let i = 0; i < titles.length; i++) {
-        const data = await fetchAnimeData(titles[i]);
-        const card = document.getElementById(`all-card-${i}`);
-        if (card) {
-          const imgHtml = data
-            ? `<img src="${data.images.jpg.image_url}" alt="${titles[i]}" loading="lazy">`
-            : `<span style="font-size:0.75rem; color:#888;">No Cover</span>`;
-          card.querySelector('.cover-wrap').classList.remove('skeleton');
-          card.querySelector('.cover-wrap').innerHTML = imgHtml;
-        }
-        sendHeight();
-        await delay(450);
+        };
       }
     }
+  } catch (kitsuErr) {
+    console.error(`Kitsu fallback failed for "${title}":`, kitsuErr);
+  }
 
-    // ---------------- DEMOGRAPHIC / GENRE VIEW ----------------
-    const DEMOGRAPHIC_ORDER = ["Shounen", "Shoujo", "Seinen", "Josei", "Kodomomuke", "Unclassified"];
-    const demoSections = {}; // { demographic: { genre: gridElement } }
-    let demoViewStarted = false;
+  console.warn(`Giving up on "${title}" after all attempts.`);
+  return null;
+}
 
-    function slug(str) {
-      return str.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    }
+function classify(animeData) {
+  if (!animeData || !animeData.raw) return { demographic: "Unclassified", genres: ["Other"] };
+  
+  const rawData = animeData.raw;
+  const demoNames = (rawData.demographics || []).map(d => d.name);
+  const demographic = demoNames.map(n => DEMOGRAPHIC_MAP[n]).find(Boolean) || "Unclassified";
 
-    function getOrCreateDemoSection(demographic) {
-      if (demoSections[demographic]) return demoSections[demographic];
+  const rawTags = [
+    ...(rawData.genres || []),
+    ...(rawData.explicit_genres || []),
+    ...(rawData.themes || [])
+  ].map(g => g.name);
 
-      const container = document.getElementById('demoContainer');
-      const section = document.createElement('div');
-      section.className = 'demo-section';
-      section.id = `demo-${slug(demographic)}`;
-      section.innerHTML = `<h2 class="demo-title">${demographic}</h2>`;
-      container.appendChild(section);
+  const genres = [...new Set(rawTags.map(n => GENRE_MAP[n]).filter(Boolean))];
+  if (genres.length === 0) genres.push("Other");
 
-      // Insert into nav in fixed demographic order
-      const nav = document.getElementById('demoNav');
-      const navLink = document.createElement('a');
-      navLink.href = `#demo-${slug(demographic)}`;
-      navLink.textContent = demographic;
-      const existingLinks = Array.from(nav.children);
-      const insertBefore = existingLinks.find(el =>
-        DEMOGRAPHIC_ORDER.indexOf(el.textContent) > DEMOGRAPHIC_ORDER.indexOf(demographic)
-      );
-      nav.insertBefore(navLink, insertBefore || null);
+  return { demographic, genres };
+}
 
-      demoSections[demographic] = { __section: section, __genres: {} };
-      return demoSections[demographic];
-    }
+function buildSkeletonCard(id, title) {
+  const card = document.createElement('div');
+  card.className = 'media-card';
+  card.id = id;
+  card.innerHTML = `
+    <div class="cover-wrap skeleton"></div>
+    <p class="media-title">${title}</p>
+  `;
+  return card;
+}
 
-    function getOrCreateGenreGrid(demographic, genre) {
-      const demoEntry = getOrCreateDemoSection(demographic);
-      if (demoEntry.__genres[genre]) return demoEntry.__genres[genre];
+// ---------------- ALL VIEW ----------------
+let allViewLoaded = false;
+let allViewLoadingPromise = null;
 
-      const sub = document.createElement('div');
-      sub.className = 'genre-subsection';
-      sub.innerHTML = `<h3 class="genre-subtitle">${genre}</h3><div class="media-grid"></div>`;
-      demoEntry.__section.appendChild(sub);
+function setupAllView() {
+  const titles = allTitles.slice(0, 30);
+  const grid = document.getElementById('allGrid');
+  grid.innerHTML = '';
+  titles.forEach((title, i) => grid.appendChild(buildSkeletonCard(`all-card-${i}`, title)));
+  return titles;
+}
 
-      const grid = sub.querySelector('.media-grid');
-      demoEntry.__genres[genre] = grid;
-      return grid;
-    }
+async function loadAllViewCovers(titles) {
+  if (allViewLoaded) return;
+  allViewLoaded = true;
 
-    async function runDemoClassification() {
-      if (demoViewStarted) return;
-      demoViewStarted = true;
-
-      // Never run at the same time as the "All" view's own fetch loop --
-      // that doubles the request rate against Jikan's limit and is what
-      // was causing the 429/504 errors. Wait for it to finish first.
-      const progress = document.getElementById('classifyProgress');
-      if (allViewLoadingPromise) {
-        progress.textContent = `Waiting for the All view to finish loading first…`;
-        await allViewLoadingPromise;
+  for (let i = 0; i < titles.length; i++) {
+    const data = await fetchAnimeData(titles[i]);
+    const card = document.getElementById(`all-card-${i}`);
+    if (card) {
+      const coverWrap = card.querySelector('.cover-wrap');
+      coverWrap.classList.remove('skeleton');
+      if (data && data.imageUrl) {
+        coverWrap.innerHTML = `<img src="${data.imageUrl}" alt="${titles[i]}" loading="lazy" onerror="this.parentNode.innerHTML='<span style=\\'font-size:0.75rem; color:#888;\\'>No Cover</span>'">`;
+      } else {
+        coverWrap.innerHTML = `<span style="font-size:0.75rem; color:#888;">No Cover</span>`;
       }
+    }
+    sendHeight();
+    // Increased gap between requests to prevent 504s
+    await delay(750);
+  }
+}
 
-      for (let i = 0; i < allTitles.length; i++) {
-        const title = allTitles[i];
-        progress.textContent = `Classifying ${i + 1} / ${allTitles.length}…`;
+// ---------------- DEMOGRAPHIC / GENRE VIEW ----------------
+const DEMOGRAPHIC_ORDER = ["Shounen", "Shoujo", "Seinen", "Josei", "Kodomomuke", "Unclassified"];
+const demoSections = {};
+let demoViewStarted = false;
 
-        const data = await fetchAnimeData(title);
-        if (data) {
-          const { demographic, genres } = classify(data);
-          const imgHtml = `<img src="${data.images.jpg.image_url}" alt="${title}" loading="lazy">`;
+function slug(str) {
+  return str.toLowerCase().replace(/[^a-z0-9]/g, '-');
+}
 
-          genres.forEach(genre => {
-            const grid = getOrCreateGenreGrid(demographic, genre);
-            const card = document.createElement('div');
-            card.className = 'media-card';
-            card.innerHTML = `<div class="cover-wrap">${imgHtml}</div><p class="media-title">${title}</p>`;
-            grid.appendChild(card);
-          });
-        }
+function getOrCreateDemoSection(demographic) {
+  if (demoSections[demographic]) return demoSections[demographic];
 
-        sendHeight();
-        await delay(450);
-      }
+  const container = document.getElementById('demoContainer');
+  const section = document.createElement('div');
+  section.className = 'demo-section';
+  section.id = `demo-${slug(demographic)}`;
+  section.innerHTML = `<h2 class="demo-title">${demographic}</h2>`;
+  container.appendChild(section);
 
-      progress.textContent = `Classified ${allTitles.length} titles.`;
-      sendHeight();
+  const nav = document.getElementById('demoNav');
+  const navLink = document.createElement('a');
+  navLink.href = `#demo-${slug(demographic)}`;
+  navLink.textContent = demographic;
+  const existingLinks = Array.from(nav.children);
+  const insertBefore = existingLinks.find(el =>
+    DEMOGRAPHIC_ORDER.indexOf(el.textContent) > DEMOGRAPHIC_ORDER.indexOf(demographic)
+  );
+  nav.insertBefore(navLink, insertBefore || null);
+
+  demoSections[demographic] = { __section: section, __genres: {} };
+  return demoSections[demographic];
+}
+
+function getOrCreateGenreGrid(demographic, genre) {
+  const demoEntry = getOrCreateDemoSection(demographic);
+  if (demoEntry.__genres[genre]) return demoEntry.__genres[genre];
+
+  const sub = document.createElement('div');
+  sub.className = 'genre-subsection';
+  sub.innerHTML = `<h3 class="genre-subtitle">${genre}</h3><div class="media-grid"></div>`;
+  demoEntry.__section.appendChild(sub);
+
+  const grid = sub.querySelector('.media-grid');
+  demoEntry.__genres[genre] = grid;
+  return grid;
+}
+
+async function runDemoClassification() {
+  if (demoViewStarted) return;
+  demoViewStarted = true;
+
+  const progress = document.getElementById('classifyProgress');
+  if (allViewLoadingPromise) {
+    progress.textContent = `Waiting for initial covers to finish loading…`;
+    await allViewLoadingPromise;
+  }
+
+  for (let i = 0; i < allTitles.length; i++) {
+    const title = allTitles[i];
+    progress.textContent = `Classifying ${i + 1} / ${allTitles.length}: "${title}"…`;
+
+    const data = await fetchAnimeData(title);
+    if (data && data.imageUrl) {
+      const { demographic, genres } = classify(data);
+      const imgHtml = `<img src="${data.imageUrl}" alt="${title}" loading="lazy" onerror="this.parentNode.innerHTML='<span style=\\'font-size:0.75rem; color:#888;\\'>No Cover</span>'">`;
+
+      genres.forEach(genre => {
+        const grid = getOrCreateGenreGrid(demographic, genre);
+        const card = document.createElement('div');
+        card.className = 'media-card';
+        card.innerHTML = `<div class="cover-wrap">${imgHtml}</div><p class="media-title">${title}</p>`;
+        grid.appendChild(card);
+      });
     }
 
-    // ---------------- VIEW TOGGLE ----------------
-    const allViewBtn = document.getElementById('view-all-btn');
-    const demoViewBtn = document.getElementById('view-demo-btn');
-    const allViewEl = document.getElementById('allView');
-    const demoViewEl = document.getElementById('demoView');
+    sendHeight();
+    // Safe delay to maintain stable connection
+    await delay(750);
+  }
 
-    allViewBtn.addEventListener('click', () => {
-      allViewBtn.classList.add('active');
-      demoViewBtn.classList.remove('active');
-      allViewEl.classList.remove('hidden');
-      demoViewEl.classList.add('hidden');
-      sendHeight();
-    });
+  progress.textContent = `Classified ${allTitles.length} titles.`;
+  sendHeight();
+}
 
-    demoViewBtn.addEventListener('click', () => {
-      demoViewBtn.classList.add('active');
-      allViewBtn.classList.remove('active');
-      demoViewEl.classList.remove('hidden');
-      allViewEl.classList.add('hidden');
-      runDemoClassification();
-      sendHeight();
-    });
+// ---------------- VIEW TOGGLE ----------------
+const allViewBtn = document.getElementById('view-all-btn');
+const demoViewBtn = document.getElementById('view-demo-btn');
+const allViewEl = document.getElementById('allView');
+const demoViewEl = document.getElementById('demoView');
 
-    // Initialize
+allViewBtn.addEventListener('click', () => {
+  allViewBtn.classList.add('active');
+  demoViewBtn.classList.remove('active');
+  allViewEl.classList.remove('hidden');
+  demoViewEl.classList.add('hidden');
+  sendHeight();
+});
+
+demoViewBtn.addEventListener('click', () => {
+  demoViewBtn.classList.add('active');
+  allViewBtn.classList.remove('active');
+  demoViewEl.classList.remove('hidden');
+  allViewEl.classList.add('hidden');
+  runDemoClassification();
+  sendHeight();
+});
+
+// Initialize Page
+const initialTitles = setupAllView();
+sendHeight();
+allViewLoadingPromise = loadAllViewCovers(initialTitles);
+window.addEventListener("resize", sendHeight);
     const initialTitles = setupAllView();
     sendHeight();
     const allViewLoadingPromise = loadAllViewCovers(initialTitles);
