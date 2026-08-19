@@ -31,10 +31,13 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
   body {
     font-family: "ZaiPencilTypewriter", Georgia, serif;
     color: #2c1a18;
     background: transparent;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
   }
 
@@ -45,6 +48,7 @@
      rather than matching an existing class.
   */
   .entry-controls {
+    flex-shrink: 0;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
@@ -81,6 +85,30 @@
     font-size: 10px;
     padding: 4px 8px;
     cursor: pointer;
+  }
+
+  /*
+     entry-container is now the scrollable region — it takes up
+     whatever space is left under entry-controls (which stays put
+     at a fixed height) and scrolls its own content internally,
+     instead of the whole document growing to fit a long post.
+  */
+  #entry-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  #entry-container::-webkit-scrollbar {
+    width: 6px;
+  }
+  #entry-container::-webkit-scrollbar-track {
+    background: rgba(80, 40, 30, 0.06);
+  }
+  #entry-container::-webkit-scrollbar-thumb {
+    background: rgba(100, 50, 40, 0.35);
+    border-radius: 10px;
   }
 
   /*
@@ -257,11 +285,6 @@
       return html;
     }
 
-    function sendHeight() {
-      const height = document.documentElement.scrollHeight;
-      window.parent.postMessage({ type: "solitary-widget-resize", widget: "blog-entry", height }, "*");
-    }
-
     function formatDate(iso) {
       const d = new Date(iso);
       return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
@@ -298,7 +321,6 @@
 
       if (filtered.length === 0) {
         container.innerHTML = '<p class="entry-empty">No posts match.</p>';
-        sendHeight();
         return;
       }
 
@@ -339,8 +361,6 @@
       const newerBtn = document.getElementById("newer-btn");
       if (hasOlder) olderBtn.addEventListener("click", () => { currentIndex++; render(); });
       if (hasNewer) newerBtn.addEventListener("click", () => { currentIndex--; render(); });
-
-      sendHeight();
     }
 
     async function loadPosts() {
@@ -352,7 +372,6 @@
       if (error) {
         console.error("Supabase error:", error);
         document.getElementById("entry-container").innerHTML = '<p class="entry-empty">Couldn\'t load posts right now.</p>';
-        sendHeight();
         return;
       }
 
@@ -391,7 +410,6 @@
     });
 
     loadPosts();
-    window.addEventListener("resize", sendHeight);
   </script>
 </body>
 </html>
