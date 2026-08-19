@@ -18,12 +18,6 @@
     color: #5c4a3d;
   }
 
-  /*
-     Each item cycles through one of 3 background images
-     (deco1/2/3.png, assigned by index in loadRecent()) with a
-     translucent cream overlay behind the text so it stays
-     readable regardless of which image lands on it.
-  */
   .recent-item {
     position: relative;
     display: block;
@@ -59,11 +53,91 @@
   .recent-item-title { display: block; font-size: 13px; color: #3a2e28; }
   .recent-item-date { display: block; font-size: 10px; color: #7a6a5c; font-style: italic; }
   .recent-empty { font-size: 12px; color: #7a6a5c; }
+
+  /*
+     Search + category filter controls — moved here from
+     blog-entry-widget.html so that widget's iframe can devote its
+     full height to the post itself. Interacting with these sends
+     a postMessage sideways to #blog-entry-frame (a sibling iframe
+     in the parent page), same cross-widget technique goToPost()
+     below already uses.
+  */
+  .filter-section {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #b8a998;
+  }
+
+  #search-input {
+    width: 100%;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    font-family: inherit;
+    font-size: 12px;
+    border: 1px solid rgba(122, 21, 24, 0.3);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.6);
+    color: #3a2e28;
+  }
+
+  .category-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .category-btn {
+    position: relative;
+    background-image: url("btn-bg.png");
+    background-size: cover;
+    background-position: center;
+    border: 1px solid rgba(122, 21, 24, 0.35);
+    border-radius: 3px;
+    color: #5c1414;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 5px 9px;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .category-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 253, 247, 0.55);
+    z-index: 0;
+  }
+
+  .category-btn.active::before {
+    background: rgba(122, 21, 24, 0.75);
+  }
+
+  .category-btn span {
+    position: relative;
+    z-index: 1;
+  }
+
+  .category-btn.active span {
+    color: #fff;
+  }
 </style>
 </head>
 <body>
   <div class="recent-heading">Recent Entries</div>
   <div id="recent-list"></div>
+
+  <div class="filter-section">
+    <input type="text" id="search-input" placeholder="Search posts...">
+    <div class="category-buttons">
+      <button class="category-btn active" data-category=""><span>All</span></button>
+      <button class="category-btn" data-category="Life Updates"><span>Life Updates</span></button>
+      <button class="category-btn" data-category="Thoughts and Things"><span>Thoughts</span></button>
+      <button class="category-btn" data-category="Reviews"><span>Reviews</span></button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // ---- Fill these in with your Supabase project's values ----
@@ -72,9 +146,6 @@
     // -------------------------------------------------------------
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // The 3 interchangeable backgrounds — cycled by each item's
-    // position in the list, so with 3 recent posts shown you'll
-    // typically see all three in rotation.
     const CARD_BACKGROUNDS = ["deco1.png", "deco2.png", "deco3.png"];
 
     function escapeHtml(str) {
@@ -90,12 +161,20 @@
       const d = new Date(iso);
       return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
     }
-    function goToPost(id) {
+
+    // Shared helper — every message this widget sends to its
+    // sibling goes through the same lookup.
+    function sendToEntryWidget(message) {
       const entryFrame = window.parent.document.getElementById("blog-entry-frame");
       if (entryFrame) {
-        entryFrame.contentWindow.postMessage({ type: "blog-show-post", id }, "*");
+        entryFrame.contentWindow.postMessage(message, "*");
       }
     }
+
+    function goToPost(id) {
+      sendToEntryWidget({ type: "blog-show-post", id });
+    }
+
     async function loadRecent() {
       const { data, error } = await supabaseClient
         .from("blog_posts")
@@ -123,6 +202,22 @@
       });
       sendHeight();
     }
+
+    // Search box — sends the current text over on every keystroke
+    document.getElementById("search-input").addEventListener("input", (e) => {
+      sendToEntryWidget({ type: "blog-set-search", searchText: e.target.value });
+    });
+
+    // Category buttons — toggle active state locally for visual
+    // feedback, and tell the entry widget which category to show
+    document.querySelectorAll(".category-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        sendToEntryWidget({ type: "blog-set-category", category: btn.dataset.category });
+      });
+    });
+
     loadRecent();
     window.addEventListener("resize", sendHeight);
   </script>
