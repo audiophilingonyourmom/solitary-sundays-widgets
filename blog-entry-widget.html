@@ -4,13 +4,6 @@
 <meta charset="UTF-8">
 <title>Blog Entry Widget</title>
 <style>
-  /*
-     Same font files as the main site. Every file in this project
-     (blog.html, style.css, both widgets, admin.html) expects
-     fonts and images sitting flat in the same root folder — if
-     you move this widget into a subfolder later, update these
-     url()s to match.
-  */
   @font-face {
     font-family: "GothicPixels";
     src: url("GothicPixels.ttf") format("truetype");
@@ -42,56 +35,12 @@
   }
 
   /*
-     Widget-only controls (search/category/tag) — these have no
-     equivalent in the real site's CSS since they don't exist
-     outside this widget, so they're styled to fit the palette
-     rather than matching an existing class.
-  */
-  .entry-controls {
-    flex-shrink: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 12px;
-  }
-  #search-input {
-    flex: 1;
-    min-width: 120px;
-    padding: 5px 8px;
-    font-family: inherit;
-    font-size: 12px;
-    border: 1px solid rgba(122, 21, 24, 0.35);
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.5);
-    color: #2c1a18;
-  }
-  .category-btn {
-    background: rgba(122, 21, 24, 0.08);
-    border: 1px solid rgba(122, 21, 24, 0.35);
-    border-radius: 3px;
-    color: #7a1518;
-    font-family: "GothicPixels", monospace;
-    font-size: 10px;
-    padding: 4px 8px;
-    cursor: pointer;
-  }
-  .category-btn.active { background: #7a1518; color: #fff; border-color: #7a1518; }
-  .active-tag-chip {
-    background: #7a1518;
-    color: #fff;
-    border: none;
-    border-radius: 3px;
-    font-family: "GothicPixels", monospace;
-    font-size: 10px;
-    padding: 4px 8px;
-    cursor: pointer;
-  }
-
-  /*
-     entry-container is now the scrollable region — it takes up
-     whatever space is left under entry-controls (which stays put
-     at a fixed height) and scrolls its own content internally,
-     instead of the whole document growing to fit a long post.
+     Search input and category buttons used to live here — they've
+     moved to recent-posts-widget.html, under Recent Entries, and
+     now drive this widget remotely via postMessage (see the
+     message listener near the bottom of the script). That frees
+     the full iframe height for the post itself instead of losing
+     a chunk of it to controls up top.
   */
   #entry-container {
     flex: 1;
@@ -109,6 +58,30 @@
   #entry-container::-webkit-scrollbar-thumb {
     background: rgba(100, 50, 40, 0.35);
     border-radius: 10px;
+  }
+
+  .active-filter-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: "GothicPixels", monospace;
+    font-size: 10px;
+    color: #7a1518;
+    background: rgba(122, 21, 24, 0.08);
+    border: 1px solid rgba(122, 21, 24, 0.25);
+    border-radius: 3px;
+    padding: 5px 8px;
+    margin-bottom: 8px;
+  }
+  .active-filter-bar button {
+    background: none;
+    border: none;
+    color: #7a1518;
+    font-family: inherit;
+    font-size: 10px;
+    cursor: pointer;
+    text-decoration: underline;
   }
 
   /*
@@ -230,15 +203,6 @@
 </style>
 </head>
 <body>
-  <div class="entry-controls">
-    <input type="text" id="search-input" placeholder="Search posts...">
-    <button class="category-btn active" data-category="">All</button>
-    <button class="category-btn" data-category="Life Updates">Life Updates</button>
-    <button class="category-btn" data-category="Thoughts and Things">Thoughts</button>
-    <button class="category-btn" data-category="Reviews">Reviews</button>
-    <button class="active-tag-chip" id="active-tag-chip" style="display:none;"></button>
-  </div>
-
   <div id="entry-container"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -303,21 +267,16 @@
     }
 
     function render() {
-      document.querySelectorAll(".category-btn").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.category === activeCategory);
-      });
-
-      const tagChip = document.getElementById("active-tag-chip");
-      if (activeTag) {
-        tagChip.style.display = "inline-block";
-        tagChip.textContent = "#" + activeTag + " ✕";
-        tagChip.onclick = () => { activeTag = ""; currentIndex = 0; render(); };
-      } else {
-        tagChip.style.display = "none";
-      }
-
       const filtered = getFiltered();
       const container = document.getElementById("entry-container");
+
+      // Reset scroll position on every render — without this, if
+      // the reader had scrolled down into a long post and then a
+      // new search/category/tag filter swaps the content out from
+      // under them, the container stays scrolled to the same pixel
+      // offset, which can land on blank space or an unrelated part
+      // of the new post. Looks exactly like "the search is broken."
+      container.scrollTop = 0;
 
       if (filtered.length === 0) {
         container.innerHTML = '<p class="entry-empty">No posts match.</p>';
@@ -332,7 +291,15 @@
       const hasOlder = currentIndex < filtered.length - 1;
       const hasNewer = currentIndex > 0;
 
+      const filterBarHtml = activeTag
+        ? `<div class="active-filter-bar">
+             <span>Filtered by #${escapeHtml(activeTag)}</span>
+             <button id="clear-tag-btn">✕ Clear</button>
+           </div>`
+        : "";
+
       container.innerHTML = `
+        ${filterBarHtml}
         <header class="post-header">
           <span class="post-date">${formatDate(post.created_at)}</span>
           <span class="post-title">${escapeHtml(post.title)}</span>
@@ -348,6 +315,15 @@
           <button id="newer-btn" ${hasNewer ? "" : "disabled"}>Newer Entry →</button>
         </div>
       `;
+
+      const clearTagBtn = document.getElementById("clear-tag-btn");
+      if (clearTagBtn) {
+        clearTagBtn.addEventListener("click", () => {
+          activeTag = "";
+          currentIndex = 0;
+          render();
+        });
+      }
 
       container.querySelectorAll(".post-tags button").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -379,34 +355,45 @@
       render();
     }
 
-    document.querySelectorAll(".category-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        activeCategory = btn.dataset.category;
+    // ===========================================================
+    // MESSAGES FROM SIBLING WIDGETS
+    //
+    // "blog-show-post"   — recent-posts-widget.html, clicking a
+    //                       recent entry jumps straight to it.
+    // "blog-set-category" — recent-posts-widget.html's category
+    //                        buttons, now living under Recent
+    //                        Entries instead of in this widget.
+    // "blog-set-search"   — recent-posts-widget.html's search box,
+    //                        same relocation.
+    // ===========================================================
+    window.addEventListener("message", (event) => {
+      if (!event.data || !event.data.type) return;
+
+      if (event.data.type === "blog-show-post") {
+        const idx = allPosts.findIndex(p => p.id === event.data.id);
+        if (idx === -1) return;
+        activeCategory = "";
+        activeTag = "";
+        searchText = "";
+        const filtered = getFiltered();
+        currentIndex = filtered.findIndex(p => p.id === event.data.id);
+        render();
+        return;
+      }
+
+      if (event.data.type === "blog-set-category") {
+        activeCategory = event.data.category || "";
         currentIndex = 0;
         render();
-      });
-    });
+        return;
+      }
 
-    document.getElementById("search-input").addEventListener("input", (e) => {
-      searchText = e.target.value;
-      currentIndex = 0;
-      render();
-    });
-
-    // Lets the recent-posts sidebar widget (a separate iframe) tell
-    // this widget to jump straight to a specific post by id.
-    window.addEventListener("message", (event) => {
-      if (!event.data || event.data.type !== "blog-show-post") return;
-      const idx = allPosts.findIndex(p => p.id === event.data.id);
-      if (idx === -1) return;
-      // Reset filters so the requested post is guaranteed visible
-      activeCategory = "";
-      activeTag = "";
-      searchText = "";
-      document.getElementById("search-input").value = "";
-      const filtered = getFiltered();
-      currentIndex = filtered.findIndex(p => p.id === event.data.id);
-      render();
+      if (event.data.type === "blog-set-search") {
+        searchText = event.data.searchText || "";
+        currentIndex = 0;
+        render();
+        return;
+      }
     });
 
     loadPosts();
