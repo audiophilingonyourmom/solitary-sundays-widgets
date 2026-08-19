@@ -17,19 +17,46 @@
     margin-bottom: 8px;
     color: #5c4a3d;
   }
+
+  /*
+     Each item cycles through one of 3 background images
+     (deco1/2/3.png, assigned by index in loadRecent()) with a
+     translucent cream overlay behind the text so it stays
+     readable regardless of which image lands on it.
+  */
   .recent-item {
+    position: relative;
     display: block;
-    background: none;
-    border: none;
-    border-bottom: 1px solid #b8a998;
     width: 100%;
     text-align: left;
-    padding: 6px 0;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(184, 169, 152, 0.4);
+    border-radius: 4px;
     cursor: pointer;
     font-family: inherit;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    overflow: hidden;
   }
-  .recent-item:last-child { border-bottom: none; }
-  .recent-item-title { font-size: 13px; color: #3a2e28; }
+  .recent-item:last-child { margin-bottom: 0; }
+
+  .recent-item::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 253, 247, 0.55);
+    z-index: 0;
+  }
+
+  .recent-item-title,
+  .recent-item-date {
+    position: relative;
+    z-index: 1;
+  }
+
+  .recent-item-title { display: block; font-size: 13px; color: #3a2e28; }
   .recent-item-date { display: block; font-size: 10px; color: #7a6a5c; font-style: italic; }
   .recent-empty { font-size: 12px; color: #7a6a5c; }
 </style>
@@ -37,71 +64,65 @@
 <body>
   <div class="recent-heading">Recent Entries</div>
   <div id="recent-list"></div>
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // ---- Fill these in with your Supabase project's values ----
     const SUPABASE_URL = "https://gcnmjgyuyelqppkpytow.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_6SJRQVPqERtYanyHi7iGxw_NGIwVoWN";
     // -------------------------------------------------------------
-
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // The 3 interchangeable backgrounds — cycled by each item's
+    // position in the list, so with 3 recent posts shown you'll
+    // typically see all three in rotation.
+    const CARD_BACKGROUNDS = ["deco1.png", "deco2.png", "deco3.png"];
 
     function escapeHtml(str) {
       const div = document.createElement("div");
       div.textContent = str;
       return div.innerHTML;
     }
-
     function sendHeight() {
       const height = document.documentElement.scrollHeight;
       window.parent.postMessage({ type: "solitary-widget-resize", widget: "blog-recent", height }, "*");
     }
-
     function formatDate(iso) {
       const d = new Date(iso);
       return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
     }
-
-    // Sends the click over to the entry widget iframe, which lives as
-    // a sibling in the parent page (same technique as this widget's
-    // own postMessage resize calls, just aimed sideways instead of up).
     function goToPost(id) {
       const entryFrame = window.parent.document.getElementById("blog-entry-frame");
       if (entryFrame) {
         entryFrame.contentWindow.postMessage({ type: "blog-show-post", id }, "*");
       }
     }
-
     async function loadRecent() {
       const { data, error } = await supabaseClient
         .from("blog_posts")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(3);
-
       const container = document.getElementById("recent-list");
-
       if (error || !data || data.length === 0) {
         container.innerHTML = '<p class="recent-empty">No posts yet.</p>';
         sendHeight();
         return;
       }
-
-      container.innerHTML = data.map(post => `
-        <button class="recent-item" data-id="${post.id}">
+      container.innerHTML = data.map((post, i) => `
+        <button
+          class="recent-item"
+          data-id="${post.id}"
+          style="background-image:url('${CARD_BACKGROUNDS[i % CARD_BACKGROUNDS.length]}');"
+        >
           <span class="recent-item-title">${escapeHtml(post.title)}</span>
           <span class="recent-item-date">${formatDate(post.created_at)}</span>
         </button>
       `).join("");
-
       container.querySelectorAll(".recent-item").forEach(btn => {
         btn.addEventListener("click", () => goToPost(Number(btn.dataset.id)));
       });
-
       sendHeight();
     }
-
     loadRecent();
     window.addEventListener("resize", sendHeight);
   </script>
