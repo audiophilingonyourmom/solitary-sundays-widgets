@@ -165,10 +165,11 @@
     // Shared helper — every message this widget sends to its
     // sibling goes through the same lookup.
     function sendToEntryWidget(message) {
-      const entryFrame = window.parent.document.getElementById("blog-entry-frame");
-      if (entryFrame) {
-        entryFrame.contentWindow.postMessage(message, "*");
-      }
+      // Can't reach a sibling iframe directly cross-origin — see
+      // script.js's WIDGET BRIDGE comment for why. This posts UP
+      // to the parent Neocities page instead, asking it to relay
+      // the payload sideways to #blog-entry-frame.
+      window.parent.postMessage({ type: "blog-relay", target: "blog-entry", payload: message }, "*");
     }
 
     function goToPost(id) {
