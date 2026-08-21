@@ -17,7 +17,12 @@
     font-style: normal;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0d1424; overflow: hidden; }
+  html, body {
+    height: 100%;
+    background: transparent;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
 
   .microblog-item {
     display: flex;
@@ -103,11 +108,6 @@
       return div.innerHTML;
     }
 
-    function sendHeight() {
-      const height = document.documentElement.scrollHeight;
-      window.parent.postMessage({ type: "solitary-widget-resize", widget: "microblog", height }, "*");
-    }
-
     async function loadPosts() {
       const { data, error } = await supabaseClient
         .from("microblog_posts")
@@ -120,13 +120,11 @@
       if (error) {
         console.error("Supabase error:", error);
         container.innerHTML = '<p class="microblog-empty">Error: ' + escapeHtml(error.message || JSON.stringify(error)) + '</p>';
-        sendHeight();
         return;
       }
 
       if (!data || data.length === 0) {
         container.innerHTML = '<p class="microblog-empty">No posts yet.</p>';
-        sendHeight();
         return;
       }
 
@@ -139,14 +137,9 @@
           </div>
         </div>
       `).join("");
-
-      sendHeight();
-      // Avatars loading can change the final height slightly
-      container.querySelectorAll("img").forEach(img => img.addEventListener("load", sendHeight));
     }
 
     loadPosts();
-    window.addEventListener("resize", sendHeight);
   </script>
 </body>
 </html>
