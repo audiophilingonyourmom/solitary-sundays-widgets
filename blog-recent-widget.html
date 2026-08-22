@@ -148,6 +148,13 @@
 
     const CARD_BACKGROUNDS = ["deco1.png", "deco2.png", "deco3.png"];
 
+    // Same convention as blog-entry-widget.html — category pages
+    // pass ?category=... on this widget's iframe src too, so the
+    // sidebar's recent-posts list and active button match whatever
+    // category the page is actually showing.
+    const urlParams = new URLSearchParams(window.location.search);
+    const pageCategory = urlParams.get("category") || "";
+
     function escapeHtml(str) {
       const div = document.createElement("div");
       div.textContent = str;
@@ -177,11 +184,17 @@
     }
 
     async function loadRecent() {
-      const { data, error } = await supabaseClient
+      let query = supabaseClient
         .from("blog_posts")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(3);
+
+      if (pageCategory) {
+        query = query.eq("category", pageCategory);
+      }
+
+      const { data, error } = await query;
       const container = document.getElementById("recent-list");
       if (error || !data || data.length === 0) {
         container.innerHTML = '<p class="recent-empty">No posts yet.</p>';
@@ -212,6 +225,7 @@
     // Category buttons — toggle active state locally for visual
     // feedback, and tell the entry widget which category to show
     document.querySelectorAll(".category-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.category === pageCategory);
       btn.addEventListener("click", () => {
         document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
