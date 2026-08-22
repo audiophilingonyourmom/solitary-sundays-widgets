@@ -217,6 +217,15 @@
     let allPosts = [];
     let currentIndex = 0; // index within the FILTERED list
     let activeCategory = "";
+
+    // Category pages (thoughts.html, reviews.html, life-updates.html)
+    // embed this same widget but pass ?category=... on the iframe
+    // src, so it opens already filtered instead of showing every
+    // post site-wide.
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("category")) {
+      activeCategory = urlParams.get("category");
+    }
     let activeTag = "";
     let searchText = "";
 
